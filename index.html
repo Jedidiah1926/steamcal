@@ -73,6 +73,14 @@
     border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer;
   }
   .nav button:hover { border-color: var(--muted); }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .lang button {
+    font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: transparent;
+    border: 0; padding: 7px 11px; cursor: pointer;
+  }
+  .lang button + button { border-left: 1px solid var(--line); }
+  .lang button[aria-pressed="true"] { background: var(--today); color: #fff; }
 
   .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -95,9 +103,10 @@
     padding: 12px 14px; margin-bottom: 16px; font-size: 14px;
   }
   .summary .hint { color: var(--muted); }
-  .summary .rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; margin-top: 8px; }
+  .summary .rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; margin-top: 8px; }
   .summary .row { display: flex; align-items: center; gap: 8px; }
   .summary .row b { font-weight: 600; }
+  .summary .row span, .summary .row b { white-space: nowrap; }
   .summary .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .summary .clear { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
 
@@ -176,53 +185,162 @@
 <div class="wrap">
   <header>
     <div>
-      <h1>Steam 세금 심사 캘린더</h1>
-      <div class="sub">날짜를 클릭/탭하면 다음 영업일부터 45영업일까지 표시됩니다 (미국 연방 공휴일·주말 제외)</div>
+      <h1 data-i18n="title"></h1>
+      <div class="sub" data-i18n="sub"></div>
     </div>
-    <div class="nav">
-      <button id="prev" aria-label="이전 달">◀</button>
-      <button id="today">오늘</button>
-      <button id="next" aria-label="다음 달">▶</button>
+    <div class="tools">
+      <div class="lang" id="lang" role="group" aria-label="Language">
+        <button type="button" data-lang="ko">KR</button>
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ja">JP</button>
+      </div>
+      <div class="nav">
+        <button id="prev">◀</button>
+        <button id="today" data-i18n="today"></button>
+        <button id="next">▶</button>
+      </div>
     </div>
   </header>
 
   <div class="legend">
-    <span><i class="sw" style="background:var(--c-start)"></i>선택한 날</span>
-    <span><i class="sw" style="background:var(--c-g)"></i>1–15 영업일</span>
-    <span><i class="sw" style="background:var(--c-y)"></i>16–30 영업일</span>
-    <span><i class="sw" style="background:var(--c-o)"></i>31–45 영업일</span>
-    <span><i class="sw hatch"></i>비영업일 (빗금)</span>
-    <span><i class="sw off"></i>주말·미국 공휴일</span>
+    <span><i class="sw" style="background:var(--c-start)"></i><span data-i18n="lgSel"></span></span>
+    <span><i class="sw" style="background:var(--c-g)"></i><span data-i18n="lgG"></span></span>
+    <span><i class="sw" style="background:var(--c-y)"></i><span data-i18n="lgY"></span></span>
+    <span><i class="sw" style="background:var(--c-o)"></i><span data-i18n="lgO"></span></span>
+    <span><i class="sw hatch"></i><span data-i18n="lgHatch"></span></span>
+    <span><i class="sw off"></i><span data-i18n="lgOff"></span></span>
   </div>
 
   <div class="opts" id="opts">
-    <span class="opts-title">추가 비영업일</span>
-    <label><input type="checkbox" data-opt="thanksFri"> 추수감사절 다음날 (금)</label>
-    <label><input type="checkbox" data-opt="xmasEve"> 크리스마스이브 (12/24)</label>
-    <span class="hint">연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 체크하면 비영업일로 계산합니다.</span>
+    <span class="opts-title" data-i18n="optTitle"></span>
+    <label><input type="checkbox" data-opt="thanksFri"> <span data-i18n="optThanks"></span></label>
+    <label><input type="checkbox" data-opt="xmasEve"> <span data-i18n="optXmas"></span></label>
+    <span class="hint" data-i18n="optHint"></span>
   </div>
 
   <div class="summary" id="summary"></div>
   <div class="months" id="months"></div>
 
   <details class="holist" id="holist">
-    <summary>미국 연방 공휴일 목록</summary>
+    <summary></summary>
     <ul id="holist-ul"></ul>
   </details>
-  <div class="note">공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다. 추가 비영업일은 주말과 겹치면 대체 휴무 없이 그대로 둡니다.</div>
+  <div class="note" data-i18n="note"></div>
 </div>
 
 <script>
 (() => {
-  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
-  const MONTHS_SHOWN = 3;
+  // ---------- 다국어 (KR / EN / JP) ----------
+  const I18N = {
+    ko: {
+      htmlLang: 'ko',
+      title: 'Steam 세금 심사 캘린더',
+      sub: '날짜를 클릭/탭하면 다음 영업일부터 45영업일까지 표시됩니다 (미국 연방 공휴일·주말 제외)',
+      today: '오늘', prev: '이전 달', next: '다음 달',
+      lgSel: '선택한 날', lgG: '1–15 영업일', lgY: '16–30 영업일', lgO: '31–45 영업일',
+      lgHatch: '비영업일 (빗금)', lgOff: '주말·미국 공휴일',
+      optTitle: '추가 비영업일', optThanks: '추수감사절 다음날 (금)', optXmas: '크리스마스이브 (12/24)',
+      optHint: '연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 체크하면 비영업일로 계산합니다.',
+      note: '공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다. 추가 비영업일은 주말과 겹치면 대체 휴무 없이 그대로 둡니다.',
+      hint: '날짜를 클릭하거나 탭하세요. 같은 날짜를 다시 누르면 선택이 해제됩니다.',
+      selected: '선택한 날', clear: '선택 해제', start: '선택',
+      bd: n => `${n}영업일`, biz: '영업일', nonbiz: '비영업일',
+      optOn: '추가 비영업일', optOff: '옵션 꺼짐: 영업일',
+      holList: ys => `미국 연방 공휴일 목록 (${ys})`,
+      observedTo: d => `→ 대체 휴무 ${d}`, observed: ' (대체)',
+      listOptOn: '추가 옵션 켜짐 (비영업일)', listOptOff: '추가 옵션 꺼짐 (영업일)',
+      dow: ['일', '월', '화', '수', '목', '금', '토'],
+      month: (y, m) => `${y}년 ${m + 1}월`,
+      fmt: (d, w) => `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()} (${w})`,
+    },
+    en: {
+      htmlLang: 'en',
+      title: 'Steam Tax Review Calendar',
+      sub: 'Click or tap a date to mark business days 1–45, starting the next business day (US federal holidays and weekends excluded)',
+      today: 'Today', prev: 'Previous month', next: 'Next month',
+      lgSel: 'Selected day', lgG: 'Business days 1–15', lgY: 'Business days 16–30', lgO: 'Business days 31–45',
+      lgHatch: 'Non-business day (hatched)', lgOff: 'Weekend / US holiday',
+      optTitle: 'Extra non-business days', optThanks: 'Day after Thanksgiving (Fri)', optXmas: 'Christmas Eve (12/24)',
+      optHint: 'Not federal holidays, but many companies are closed. Check to count them as non-business days.',
+      note: 'A holiday on Saturday is observed the Friday before; on Sunday, the Monday after. Numbers in the bar are business-day counts. Extra non-business days that fall on a weekend are not moved.',
+      hint: 'Click or tap a date. Tap the same date again to clear.',
+      selected: 'Selected day', clear: 'Clear', start: 'Start',
+      bd: n => `Business day ${n}`, biz: 'Business day', nonbiz: 'Non-business day',
+      optOn: 'extra non-business day', optOff: 'option off: business day',
+      holList: ys => `US federal holidays (${ys})`,
+      observedTo: d => `→ observed ${d}`, observed: ' (observed)',
+      listOptOn: 'extra option on (non-business)', listOptOff: 'extra option off (business day)',
+      dow: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      month: (y, m) => new Date(y, m, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      fmt: (d, w) => `${w}, ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+    },
+    ja: {
+      htmlLang: 'ja',
+      title: 'Steam 税務審査カレンダー',
+      sub: '日付をクリック/タップすると、翌営業日から45営業日目までを表示します（米国連邦祝日・土日を除く）',
+      today: '今日', prev: '前の月', next: '次の月',
+      lgSel: '選択日', lgG: '1–15営業日', lgY: '16–30営業日', lgO: '31–45営業日',
+      lgHatch: '非営業日（斜線）', lgOff: '土日・米国祝日',
+      optTitle: '追加の非営業日', optThanks: '感謝祭の翌日（金）', optXmas: 'クリスマス・イブ（12/24）',
+      optHint: '連邦祝日ではありませんが、休業する企業が多い日です。チェックすると非営業日として計算します。',
+      note: '祝日が土曜日の場合は前日（金）、日曜日の場合は翌日（月）が振替休日（非営業日）になります。バー内の数字は営業日数です。追加の非営業日が土日と重なる場合は振り替えません。',
+      hint: '日付をクリックまたはタップしてください。同じ日付をもう一度押すと解除されます。',
+      selected: '選択日', clear: '選択解除', start: '選択',
+      bd: n => `${n}営業日`, biz: '営業日', nonbiz: '非営業日',
+      optOn: '追加の非営業日', optOff: 'オプション無効：営業日',
+      holList: ys => `米国連邦祝日一覧（${ys}）`,
+      observedTo: d => `→ 振替休日 ${d}`, observed: '（振替）',
+      listOptOn: '追加オプション有効（非営業日）', listOptOff: '追加オプション無効（営業日）',
+      dow: ['日', '月', '火', '水', '木', '金', '土'],
+      month: (y, m) => `${y}年${m + 1}月`,
+      fmt: (d, w) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${w}）`,
+    },
+  };
+
+  const HOL_NAMES = {
+    newYear:      { ko: '새해 첫날', en: "New Year's Day", ja: '元日' },
+    mlk:          { ko: '마틴 루터 킹 데이', en: 'MLK Jr. Day', ja: 'キング牧師記念日' },
+    presidents:   { ko: '대통령의 날', en: "Presidents' Day", ja: '大統領の日' },
+    memorial:     { ko: '메모리얼 데이', en: 'Memorial Day', ja: 'メモリアルデー' },
+    juneteenth:   { ko: '준틴스', en: 'Juneteenth', ja: 'ジューンティーンス' },
+    independence: { ko: '독립기념일', en: 'Independence Day', ja: '独立記念日' },
+    labor:        { ko: '노동절', en: 'Labor Day', ja: 'レイバー・デー' },
+    columbus:     { ko: '콜럼버스 데이', en: 'Columbus Day', ja: 'コロンブス・デー' },
+    veterans:     { ko: '재향군인의 날', en: 'Veterans Day', ja: '復員軍人の日' },
+    thanksgiving: { ko: '추수감사절', en: 'Thanksgiving', ja: '感謝祭' },
+    christmas:    { ko: '크리스마스', en: 'Christmas Day', ja: 'クリスマス' },
+    thanksFri:    { ko: '추수감사절 다음날', en: 'Day after Thanksgiving', ja: '感謝祭の翌日' },
+    xmasEve:      { ko: '크리스마스이브', en: 'Christmas Eve', ja: 'クリスマス・イブ' },
+  };
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+  };
+
+  function initialLang() {
+    try {
+      const q = new URLSearchParams(location.search).get('lang');
+      if (q && I18N[q]) return q;
+    } catch {}
+    const saved = store.get('steamcal.lang');
+    if (saved && I18N[saved]) return saved;
+    const nav = (navigator.language || '').toLowerCase();
+    if (nav.startsWith('ja')) return 'ja';
+    if (nav.startsWith('en')) return 'en';
+    return 'ko';
+  }
+  let lang = initialLang();
+  const T = () => I18N[lang];
+  const hname = id => HOL_NAMES[id][lang];
 
   // ---------- 날짜 유틸 ----------
   const pad = n => String(n).padStart(2, '0');
   const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const fromKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-  const fmt = d => `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()} (${DOW[d.getDay()]})`;
+  const fmt = d => T().fmt(d, T().dow[d.getDay()]);
+  const monthIndex = d => d.getFullYear() * 12 + d.getMonth();
 
   // ---------- 미국 연방 공휴일 ----------
   const nthWeekday = (y, m, wd, n) => {
@@ -237,36 +355,36 @@
 
   function holidaysOfYear(y) {
     const list = [
-      { d: new Date(y, 0, 1), ko: '새해 첫날', en: "New Year's Day", fixed: true },
-      { d: nthWeekday(y, 0, 1, 3), ko: '마틴 루터 킹 데이', en: 'MLK Jr. Day' },
-      { d: nthWeekday(y, 1, 1, 3), ko: '대통령의 날', en: "Presidents' Day" },
-      { d: lastWeekday(y, 4, 1), ko: '메모리얼 데이', en: 'Memorial Day' },
-      ...(y >= 2021 ? [{ d: new Date(y, 5, 19), ko: '준틴스', en: 'Juneteenth', fixed: true }] : []),
-      { d: new Date(y, 6, 4), ko: '독립기념일', en: 'Independence Day', fixed: true },
-      { d: nthWeekday(y, 8, 1, 1), ko: '노동절', en: 'Labor Day' },
-      { d: nthWeekday(y, 9, 1, 2), ko: '콜럼버스 데이', en: 'Columbus Day' },
-      { d: new Date(y, 10, 11), ko: '재향군인의 날', en: 'Veterans Day', fixed: true },
-      { d: nthWeekday(y, 10, 4, 4), ko: '추수감사절', en: 'Thanksgiving' },
-      { d: new Date(y, 11, 25), ko: '크리스마스', en: 'Christmas Day', fixed: true },
+      { id: 'newYear', d: new Date(y, 0, 1), fixed: true },
+      { id: 'mlk', d: nthWeekday(y, 0, 1, 3) },
+      { id: 'presidents', d: nthWeekday(y, 1, 1, 3) },
+      { id: 'memorial', d: lastWeekday(y, 4, 1) },
+      ...(y >= 2021 ? [{ id: 'juneteenth', d: new Date(y, 5, 19), fixed: true }] : []),
+      { id: 'independence', d: new Date(y, 6, 4), fixed: true },
+      { id: 'labor', d: nthWeekday(y, 8, 1, 1) },
+      { id: 'columbus', d: nthWeekday(y, 9, 1, 2) },
+      { id: 'veterans', d: new Date(y, 10, 11), fixed: true },
+      { id: 'thanksgiving', d: nthWeekday(y, 10, 4, 4) },
+      { id: 'christmas', d: new Date(y, 11, 25), fixed: true },
     ];
     return list.map(h => ({ ...h, obs: h.fixed ? observedOf(h.d) : h.d }));
   }
 
   // 선택형 비영업일 (연방 공휴일 아님)
   const OPTIONAL = {
-    thanksFri: { ko: '추수감사절 다음날', en: 'Day after Thanksgiving', date: y => addDays(nthWeekday(y, 10, 4, 4), 1) },
-    xmasEve:   { ko: '크리스마스이브', en: 'Christmas Eve', date: y => new Date(y, 11, 24) },
+    thanksFri: y => addDays(nthWeekday(y, 10, 4, 4), 1),
+    xmasEve: y => new Date(y, 11, 24),
   };
   let opts = {};
   function optionalOf(d) {
     const k = keyOf(d);
-    for (const [id, o] of Object.entries(OPTIONAL)) {
-      if (keyOf(o.date(d.getFullYear())) === k) return { id, ko: o.ko, en: o.en, on: !!opts[id] };
+    for (const [id, dateOf] of Object.entries(OPTIONAL)) {
+      if (keyOf(dateOf(d.getFullYear())) === k) return { id, on: !!opts[id] };
     }
     return null;
   }
 
-  // key -> { ko, en, kind: 'actual' | 'observed' }, offKeys: 비영업 공휴일
+  // key -> { id, observed }, holOff: 비영업 공휴일 키
   const holInfo = new Map();
   const holOff = new Set();
   const loadedYears = new Set();
@@ -275,9 +393,9 @@
     loadedYears.add(y);
     for (const h of holidaysOfYear(y)) {
       const ak = keyOf(h.d), ok = keyOf(h.obs);
-      holInfo.set(ak, { ko: h.ko, en: h.en, kind: 'actual' });
+      holInfo.set(ak, { id: h.id, observed: false });
       holOff.add(ok);
-      if (ok !== ak) holInfo.set(ok, { ko: h.ko + ' (대체)', en: h.en + ' (observed)', kind: 'observed' });
+      if (ok !== ak) holInfo.set(ok, { id: h.id, observed: true });
     }
   }
   const prepare = d => { ensureYear(d.getFullYear() - 1); ensureYear(d.getFullYear()); ensureYear(d.getFullYear() + 1); };
@@ -303,7 +421,7 @@
       if (isBusiness(d)) {
         count++;
         const seg = segOf(count);
-        // 비영업일은 이어지는 다음 영업일의 구간 색으로 빗금 처리
+        // 영업일 사이에 낀 비영업일만 다음 영업일의 구간 색으로 빗금 처리 (45영업일 이후는 칠하지 않음)
         for (const p of pending) map.set(keyOf(p), { seg, bd: null });
         pending = [];
         map.set(keyOf(d), { seg, bd: count, last: count === 45, milestone: count === 15 || count === 30 });
@@ -316,10 +434,6 @@
   }
 
   // ---------- 상태 ----------
-  const store = {
-    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-    set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
-  };
   const now = new Date();
   const todayKey = keyOf(now);
   let selected = store.get('steamcal.selected');
@@ -332,24 +446,47 @@
   const $months = document.getElementById('months');
   const $summary = document.getElementById('summary');
 
+  function applyStatic() {
+    const t = T();
+    document.documentElement.lang = t.htmlLang;
+    document.title = t.title;
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t[el.dataset.i18n]; });
+    document.getElementById('prev').setAttribute('aria-label', t.prev);
+    document.getElementById('next').setAttribute('aria-label', t.next);
+    document.querySelectorAll('#lang button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  }
+
+  // 보여줄 달 수: 기본 3개월, 선택 범위가 화면 밖으로 넘어가면 45영업일이 있는 달까지 늘림
+  function monthsToShow(range) {
+    let n = 3;
+    if (range) {
+      const startOff = monthIndex(fromKey(selected)) - monthIndex(view);
+      const endOff = monthIndex(range.milestones[45]) - monthIndex(view);
+      if (startOff >= 0 && startOff < n && endOff >= n) n = Math.min(endOff + 1, 6);
+    }
+    return n;
+  }
+
   function render() {
     const range = selected ? computeRange(fromKey(selected)) : null;
+    const n = monthsToShow(range);
     $months.innerHTML = '';
-    for (let i = 0; i < MONTHS_SHOWN; i++) {
+    for (let i = 0; i < n; i++) {
       $months.appendChild(renderMonth(new Date(view.getFullYear(), view.getMonth() + i, 1), range));
     }
     renderSummary(range);
-    renderHolidayList();
+    renderHolidayList(n);
   }
 
   function renderMonth(first, range) {
+    const t = T();
     const y = first.getFullYear(), m = first.getMonth();
     const box = document.createElement('section');
     box.className = 'month';
-    box.innerHTML = `<h2>${y}년 ${m + 1}월</h2>`;
+    box.innerHTML = `<h2>${t.month(y, m)}</h2>`;
     const grid = document.createElement('div');
     grid.className = 'grid';
-    DOW.forEach((n, i) => {
+    t.dow.forEach((n, i) => {
       const el = document.createElement('div');
       el.className = 'dow' + (i === 0 || i === 6 ? ' we' : '');
       el.textContent = n;
@@ -375,21 +512,23 @@
       cell.className = 'cell';
       if (!biz) cell.classList.add('off');
       if (hol) cell.classList.add('hol');
-      if (hol && hol.kind === 'actual' && !holOff.has(k)) cell.classList.add('weekend-hol');
+      if (hol && !hol.observed && !holOff.has(k)) cell.classList.add('weekend-hol');
       if (k === todayKey) cell.classList.add('today');
       if (k === selected) cell.classList.add('sel');
       cell.dataset.key = k;
 
-      let title = fmt(d) + (biz ? ' · 영업일' : ' · 비영업일');
+      let title = `${fmt(d)} · ${biz ? t.biz : t.nonbiz}`;
       let html = `<span class="num">${dayNum}</span>`;
       const opt = hol ? null : optionalOf(d);
       if (opt && opt.on) cell.classList.add('hol');
       if (hol) {
-        html += `<div class="hname" title="${hol.en}">${hol.ko}</div>`;
-        title += ` · ${hol.ko} / ${hol.en}`;
+        const name = hname(hol.id) + (hol.observed ? t.observed : '');
+        html += `<div class="hname">${name}</div>`;
+        title += ` · ${name}` + (lang !== 'en' ? ` / ${HOL_NAMES[hol.id].en}` : '');
       } else if (opt) {
-        html += `<div class="hname${opt.on ? '' : ' inactive'}" title="${opt.en}">${opt.ko}</div>`;
-        title += ` · ${opt.ko} / ${opt.en}` + (opt.on ? ' (추가 비영업일)' : ' (옵션 꺼짐: 영업일)');
+        const name = hname(opt.id);
+        html += `<div class="hname${opt.on ? '' : ' inactive'}">${name}</div>`;
+        title += ` · ${name} (${opt.on ? t.optOn : t.optOff})`;
       }
 
       const r = range && range.map.get(k);
@@ -398,9 +537,9 @@
         if (r.first) cls.push('first');
         if (r.last) cls.push('last');
         if (r.milestone) cls.push('milestone');
-        const label = r.seg === 0 ? '선택' : (r.bd ?? '');
+        const label = r.seg === 0 ? t.start : (r.bd ?? '');
         html += `<div class="${cls.join(' ')}">${label}</div>`;
-        title += r.seg === 0 ? ' · 선택한 날' : r.bd ? ` · ${r.bd}영업일` : '';
+        title += r.seg === 0 ? ` · ${t.selected}` : r.bd ? ` · ${t.bd(r.bd)}` : '';
       }
       cell.innerHTML = html;
       cell.title = title;
@@ -412,49 +551,49 @@
   }
 
   function renderSummary(range) {
+    const t = T();
     if (!range) {
-      $summary.innerHTML = `<span class="hint">날짜를 클릭하거나 탭하세요. 같은 날짜를 다시 누르면 선택이 해제됩니다.</span>`;
+      $summary.innerHTML = `<span class="hint">${t.hint}</span>`;
       return;
     }
     const ms = range.milestones;
-    const row = (color, label, d) =>
-      `<div class="row"><i class="sw" style="background:var(${color})"></i><span>${label}</span><b>${fmt(d)}</b></div>`;
+    const row = (color, n) =>
+      `<div class="row"><i class="sw" style="background:var(${color})"></i><span>${t.bd(n)}</span><b>${fmt(ms[n])}</b></div>`;
     $summary.innerHTML = `
       <div class="top">
-        <div>선택한 날: <b>${fmt(fromKey(selected))}</b></div>
-        <button class="clear" id="clear">선택 해제</button>
+        <div>${t.selected}: <b>${fmt(fromKey(selected))}</b></div>
+        <button class="clear" id="clear">${t.clear}</button>
       </div>
       <div class="rows">
-        ${row('--c-g', '1영업일', ms[1])}
-        ${row('--c-g', '15영업일', ms[15])}
-        ${row('--c-y', '16영업일', ms[16])}
-        ${row('--c-y', '30영업일', ms[30])}
-        ${row('--c-o', '31영업일', ms[31])}
-        ${row('--c-o', '45영업일', ms[45])}
+        ${row('--c-g', 1)}${row('--c-g', 15)}
+        ${row('--c-y', 16)}${row('--c-y', 30)}
+        ${row('--c-o', 31)}${row('--c-o', 45)}
       </div>`;
     document.getElementById('clear').onclick = () => select(null);
   }
 
-  function renderHolidayList() {
+  function renderHolidayList(n) {
+    const t = T();
     const ys = new Set();
-    for (let i = 0; i < MONTHS_SHOWN; i++) ys.add(new Date(view.getFullYear(), view.getMonth() + i, 1).getFullYear());
+    for (let i = 0; i < n; i++) ys.add(new Date(view.getFullYear(), view.getMonth() + i, 1).getFullYear());
     const ul = document.getElementById('holist-ul');
     ul.innerHTML = '';
     for (const y of ys) {
       for (const h of holidaysOfYear(y)) {
         const li = document.createElement('li');
         const moved = keyOf(h.d) !== keyOf(h.obs);
-        li.innerHTML = `<b>${fmt(h.d)}</b> ${h.ko} <span class="obs">${h.en}${moved ? ` → 대체 휴무 ${fmt(h.obs)}` : ''}</span>`;
+        const en = lang !== 'en' ? HOL_NAMES[h.id].en : '';
+        const extra = [en, moved ? t.observedTo(fmt(h.obs)) : ''].filter(Boolean).join(' ');
+        li.innerHTML = `<b>${fmt(h.d)}</b> ${hname(h.id)} <span class="obs">${extra}</span>`;
         ul.appendChild(li);
       }
-      for (const [id, o] of Object.entries(OPTIONAL)) {
-        const d = o.date(y);
+      for (const [id, dateOf] of Object.entries(OPTIONAL)) {
         const li = document.createElement('li');
-        li.innerHTML = `<b>${fmt(d)}</b> ${o.ko} <span class="obs">${o.en} · 추가 옵션 ${opts[id] ? '켜짐 (비영업일)' : '꺼짐 (영업일)'}</span>`;
+        li.innerHTML = `<b>${fmt(dateOf(y))}</b> ${hname(id)} <span class="obs">${opts[id] ? t.listOptOn : t.listOptOff}</span>`;
         ul.appendChild(li);
       }
     }
-    document.querySelector('#holist summary').textContent = `미국 연방 공휴일 목록 (${[...ys].join(', ')})`;
+    document.querySelector('#holist summary').textContent = t.holList([...ys].join(', '));
   }
 
   function select(k) {
@@ -472,9 +611,18 @@
   document.getElementById('next').onclick = () => shift(1);
   document.getElementById('today').onclick = () => { view = new Date(now.getFullYear(), now.getMonth(), 1); render(); };
   document.addEventListener('keydown', e => {
-    if (e.target.closest('input, textarea')) return;
-    if (e.key === 'ArrowLeft' && !e.target.closest('.cell')) shift(-1);
-    if (e.key === 'ArrowRight' && !e.target.closest('.cell')) shift(1);
+    if (e.target.closest('input, textarea, button')) return;
+    if (e.key === 'ArrowLeft') shift(-1);
+    if (e.key === 'ArrowRight') shift(1);
+  });
+
+  document.querySelectorAll('#lang button').forEach(b => {
+    b.addEventListener('click', () => {
+      lang = b.dataset.lang;
+      store.set('steamcal.lang', lang);
+      applyStatic();
+      render();
+    });
   });
 
   document.querySelectorAll('#opts input[data-opt]').forEach(cb => {
@@ -486,6 +634,7 @@
     });
   });
 
+  applyStatic();
   render();
 })();
 </script>
