@@ -80,6 +80,16 @@
   .sw.hatch { background: repeating-linear-gradient(-45deg, var(--c-g) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--c-g); }
   .sw.off { background: var(--off-bg); box-shadow: inset 0 0 0 1px var(--line); }
 
+  .opts {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; margin-bottom: 12px; font-size: 14px;
+  }
+  .opts-title { font-weight: 600; }
+  .opts label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .opts input { width: 17px; height: 17px; margin: 0; accent-color: var(--today); }
+  .opts .hint { color: var(--muted); font-size: 12px; flex-basis: 100%; }
+
   .summary {
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
     padding: 12px 14px; margin-bottom: 16px; font-size: 14px;
@@ -123,6 +133,7 @@
     word-break: keep-all;
   }
   .cell.weekend-hol .hname { opacity: .7; }
+  .hname.inactive { color: var(--muted); opacity: .8; }
 
   /* 진행 바 */
   .bar {
@@ -184,6 +195,13 @@
     <span><i class="sw off"></i>주말·미국 공휴일</span>
   </div>
 
+  <div class="opts" id="opts">
+    <span class="opts-title">추가 비영업일</span>
+    <label><input type="checkbox" data-opt="thanksFri"> 추수감사절 다음날 (금)</label>
+    <label><input type="checkbox" data-opt="xmasEve"> 크리스마스이브 (12/24)</label>
+    <span class="hint">연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 체크하면 비영업일로 계산합니다.</span>
+  </div>
+
   <div class="summary" id="summary"></div>
   <div class="months" id="months"></div>
 
@@ -191,7 +209,7 @@
     <summary>미국 연방 공휴일 목록</summary>
     <ul id="holist-ul"></ul>
   </details>
-  <div class="note">공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다.</div>
+  <div class="note">공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다. 추가 비영업일은 주말과 겹치면 대체 휴무 없이 그대로 둡니다.</div>
 </div>
 
 <script>
@@ -234,6 +252,20 @@
     return list.map(h => ({ ...h, obs: h.fixed ? observedOf(h.d) : h.d }));
   }
 
+  // 선택형 비영업일 (연방 공휴일 아님)
+  const OPTIONAL = {
+    thanksFri: { ko: '추수감사절 다음날', en: 'Day after Thanksgiving', date: y => addDays(nthWeekday(y, 10, 4, 4), 1) },
+    xmasEve:   { ko: '크리스마스이브', en: 'Christmas Eve', date: y => new Date(y, 11, 24) },
+  };
+  let opts = {};
+  function optionalOf(d) {
+    const k = keyOf(d);
+    for (const [id, o] of Object.entries(OPTIONAL)) {
+      if (keyOf(o.date(d.getFullYear())) === k) return { id, ko: o.ko, en: o.en, on: !!opts[id] };
+    }
+    return null;
+  }
+
   // key -> { ko, en, kind: 'actual' | 'observed' }, offKeys: 비영업 공휴일
   const holInfo = new Map();
   const holOff = new Set();
@@ -250,7 +282,13 @@
   }
   const prepare = d => { ensureYear(d.getFullYear() - 1); ensureYear(d.getFullYear()); ensureYear(d.getFullYear() + 1); };
   const holidayOf = d => { prepare(d); return holInfo.get(keyOf(d)); };
-  const isBusiness = d => { prepare(d); const w = d.getDay(); return w !== 0 && w !== 6 && !holOff.has(keyOf(d)); };
+  const isBusiness = d => {
+    prepare(d);
+    const w = d.getDay();
+    if (w === 0 || w === 6 || holOff.has(keyOf(d))) return false;
+    const o = optionalOf(d);
+    return !(o && o.on);
+  };
 
   // ---------- 영업일 계산 ----------
   const segOf = n => n <= 15 ? 1 : n <= 30 ? 2 : 3;
@@ -286,6 +324,7 @@
   const todayKey = keyOf(now);
   let selected = store.get('steamcal.selected');
   if (selected && !/^\d{4}-\d{2}-\d{2}$/.test(selected)) selected = null;
+  try { const o = JSON.parse(store.get('steamcal.opts') || '{}'); if (o && typeof o === 'object') opts = o; } catch {}
   let view = selected ? fromKey(selected) : now;
   view = new Date(view.getFullYear(), view.getMonth(), 1);
 
@@ -343,9 +382,14 @@
 
       let title = fmt(d) + (biz ? ' · 영업일' : ' · 비영업일');
       let html = `<span class="num">${dayNum}</span>`;
+      const opt = hol ? null : optionalOf(d);
+      if (opt && opt.on) cell.classList.add('hol');
       if (hol) {
         html += `<div class="hname" title="${hol.en}">${hol.ko}</div>`;
         title += ` · ${hol.ko} / ${hol.en}`;
+      } else if (opt) {
+        html += `<div class="hname${opt.on ? '' : ' inactive'}" title="${opt.en}">${opt.ko}</div>`;
+        title += ` · ${opt.ko} / ${opt.en}` + (opt.on ? ' (추가 비영업일)' : ' (옵션 꺼짐: 영업일)');
       }
 
       const r = range && range.map.get(k);
@@ -403,6 +447,12 @@
         li.innerHTML = `<b>${fmt(h.d)}</b> ${h.ko} <span class="obs">${h.en}${moved ? ` → 대체 휴무 ${fmt(h.obs)}` : ''}</span>`;
         ul.appendChild(li);
       }
+      for (const [id, o] of Object.entries(OPTIONAL)) {
+        const d = o.date(y);
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${fmt(d)}</b> ${o.ko} <span class="obs">${o.en} · 추가 옵션 ${opts[id] ? '켜짐 (비영업일)' : '꺼짐 (영업일)'}</span>`;
+        ul.appendChild(li);
+      }
     }
     document.querySelector('#holist summary').textContent = `미국 연방 공휴일 목록 (${[...ys].join(', ')})`;
   }
@@ -425,6 +475,15 @@
     if (e.target.closest('input, textarea')) return;
     if (e.key === 'ArrowLeft' && !e.target.closest('.cell')) shift(-1);
     if (e.key === 'ArrowRight' && !e.target.closest('.cell')) shift(1);
+  });
+
+  document.querySelectorAll('#opts input[data-opt]').forEach(cb => {
+    cb.checked = !!opts[cb.dataset.opt];
+    cb.addEventListener('change', () => {
+      opts[cb.dataset.opt] = cb.checked;
+      store.set('steamcal.opts', JSON.stringify(opts));
+      render();
+    });
   });
 
   render();
