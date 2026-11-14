@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steam 세금 심사 캘린더</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1d2330;
+    --muted: #6b7385;
+    --line: #e2e5eb;
+    --off-bg: #eef0f4;
+    --holiday: #d23b3b;
+    --today: #1b6fd8;
+
+    --c-start: #6ec6f5;   /* 하늘색: 선택한 날 */
+    --c-g: #2fb36b;       /* 초록: 1~15 영업일 */
+    --c-y: #f0c419;       /* 노랑: 16~30 영업일 */
+    --c-o: #f2862e;       /* 주황: 31~45 영업일 */
+    --bar-text: #10202a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #13161c;
+      --surface: #1b1f27;
+      --text: #e6e9ef;
+      --muted: #8e96a8;
+      --line: #2b313c;
+      --off-bg: #161a21;
+      --holiday: #ff7272;
+      --today: #6aa8ff;
+      --c-start: #5bb8ea;
+      --c-g: #2ea866;
+      --c-y: #e2b714;
+      --c-o: #e57a24;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #13161c;
+    --surface: #1b1f27;
+    --text: #e6e9ef;
+    --muted: #8e96a8;
+    --line: #2b313c;
+    --off-bg: #161a21;
+    --holiday: #ff7272;
+    --today: #6aa8ff;
+    --c-start: #5bb8ea;
+    --c-g: #2ea866;
+    --c-y: #e2b714;
+    --c-o: #e57a24;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .nav { display: flex; gap: 6px; }
+  .nav button {
+    font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer;
+  }
+  .nav button:hover { border-color: var(--muted); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { width: 22px; height: 10px; border-radius: 3px; display: inline-block; }
+  .sw.hatch { background: repeating-linear-gradient(-45deg, var(--c-g) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--c-g); }
+  .sw.off { background: var(--off-bg); box-shadow: inset 0 0 0 1px var(--line); }
+
+  .summary {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 16px; font-size: 14px;
+  }
+  .summary .hint { color: var(--muted); }
+  .summary .rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 16px; margin-top: 8px; }
+  .summary .row { display: flex; align-items: center; gap: 8px; }
+  .summary .row b { font-weight: 600; }
+  .summary .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .summary .clear { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+
+  .months { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; }
+  .month { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .month h2 { font-size: 16px; margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .dow { font-size: 12px; color: var(--muted); text-align: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .dow.we { color: var(--holiday); opacity: .75; }
+
+  .cell {
+    position: relative; min-height: 74px; padding: 4px 5px 0; text-align: left;
+    font: inherit; color: inherit; background: transparent; border: 0;
+    border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    cursor: pointer; width: 100%;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+    padding-bottom: 28px;
+  }
+  .cell:nth-child(7n) { border-right: 0; }
+  .cell.empty { cursor: default; background: transparent; }
+  .cell.off { background: var(--off-bg); }
+  @media (hover: hover) { .cell:not(.empty):hover { outline: 2px solid var(--line); outline-offset: -2px; } }
+  .cell:focus-visible { outline: 2px solid var(--today); outline-offset: -2px; }
+  .num { font-size: 13px; font-weight: 600; }
+  .cell.off .num { color: var(--muted); }
+  .cell.hol .num { color: var(--holiday); }
+  .cell.today .num {
+    background: var(--today); color: #fff; border-radius: 999px; padding: 0 6px; display: inline-block;
+  }
+  .hname {
+    font-size: 10.5px; line-height: 1.2; color: var(--holiday); margin-top: 1px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    word-break: keep-all;
+  }
+  .cell.weekend-hol .hname { opacity: .7; }
+
+  /* 진행 바 */
+  .bar {
+    position: absolute; left: 0; right: -1px; bottom: 6px; height: 18px; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--bar-text);
+    pointer-events: none;
+  }
+  .bar.s0 { --c: var(--c-start); }
+  .bar.s1 { --c: var(--c-g); }
+  .bar.s2 { --c: var(--c-y); }
+  .bar.s3 { --c: var(--c-o); }
+  .bar.fill { background: var(--c); }
+  .bar.hatch {
+    background: repeating-linear-gradient(-45deg, var(--c) 0 3px, transparent 3px 7px);
+    box-shadow: inset 0 1.5px 0 var(--c), inset 0 -1.5px 0 var(--c);
+  }
+  .bar.first { left: 4px; border-top-left-radius: 9px; border-bottom-left-radius: 9px; }
+  .bar.last { right: 4px; border-top-right-radius: 9px; border-bottom-right-radius: 9px; }
+  .bar.milestone { box-shadow: inset -3px 0 0 rgba(0,0,0,.28); }
+  .cell.sel { box-shadow: inset 0 0 0 2px var(--c-start); }
+
+  .holist { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; }
+  .holist summary { cursor: pointer; padding: 8px 0; font-weight: 600; }
+  .holist ul { list-style: none; padding: 0; margin: 0 0 10px; columns: 2 280px; font-size: 14px; }
+  .holist li { padding: 3px 0; break-inside: avoid; }
+  .holist .obs { color: var(--muted); font-size: 12px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 12px; }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 19px; }
+    .months { grid-template-columns: 1fr; }
+    .cell { min-height: 62px; padding: 3px 3px 24px; }
+    .hname { font-size: 9.5px; -webkit-line-clamp: 1; }
+    .bar { height: 16px; font-size: 10px; bottom: 5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Steam 세금 심사 캘린더</h1>
+      <div class="sub">날짜를 클릭/탭하면 다음 영업일부터 45영업일까지 표시됩니다 (미국 연방 공휴일·주말 제외)</div>
+    </div>
+    <div class="nav">
+      <button id="prev" aria-label="이전 달">◀</button>
+      <button id="today">오늘</button>
+      <button id="next" aria-label="다음 달">▶</button>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span><i class="sw" style="background:var(--c-start)"></i>선택한 날</span>
+    <span><i class="sw" style="background:var(--c-g)"></i>1–15 영업일</span>
+    <span><i class="sw" style="background:var(--c-y)"></i>16–30 영업일</span>
+    <span><i class="sw" style="background:var(--c-o)"></i>31–45 영업일</span>
+    <span><i class="sw hatch"></i>비영업일 (빗금)</span>
+    <span><i class="sw off"></i>주말·미국 공휴일</span>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div class="months" id="months"></div>
+
+  <details class="holist" id="holist">
+    <summary>미국 연방 공휴일 목록</summary>
+    <ul id="holist-ul"></ul>
+  </details>
+  <div class="note">공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다.</div>
+</div>
+
+<script>
+(() => {
+  const DOW = ['일', '월', '화', '수', '목', '금', '토'];
+  const MONTHS_SHOWN = 3;
+
+  // ---------- 날짜 유틸 ----------
+  const pad = n => String(n).padStart(2, '0');
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const fromKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+  const fmt = d => `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()} (${DOW[d.getDay()]})`;
+
+  // ---------- 미국 연방 공휴일 ----------
+  const nthWeekday = (y, m, wd, n) => {
+    const first = new Date(y, m, 1);
+    return new Date(y, m, 1 + ((wd - first.getDay() + 7) % 7) + (n - 1) * 7);
+  };
+  const lastWeekday = (y, m, wd) => {
+    const last = new Date(y, m + 1, 0);
+    return new Date(y, m, last.getDate() - ((last.getDay() - wd + 7) % 7));
+  };
+  const observedOf = d => d.getDay() === 6 ? addDays(d, -1) : d.getDay() === 0 ? addDays(d, 1) : d;
+
+  function holidaysOfYear(y) {
+    const list = [
+      { d: new Date(y, 0, 1), ko: '새해 첫날', en: "New Year's Day", fixed: true },
+      { d: nthWeekday(y, 0, 1, 3), ko: '마틴 루터 킹 데이', en: 'MLK Jr. Day' },
+      { d: nthWeekday(y, 1, 1, 3), ko: '대통령의 날', en: "Presidents' Day" },
+      { d: lastWeekday(y, 4, 1), ko: '메모리얼 데이', en: 'Memorial Day' },
+      ...(y >= 2021 ? [{ d: new Date(y, 5, 19), ko: '준틴스', en: 'Juneteenth', fixed: true }] : []),
+      { d: new Date(y, 6, 4), ko: '독립기념일', en: 'Independence Day', fixed: true },
+      { d: nthWeekday(y, 8, 1, 1), ko: '노동절', en: 'Labor Day' },
+      { d: nthWeekday(y, 9, 1, 2), ko: '콜럼버스 데이', en: 'Columbus Day' },
+      { d: new Date(y, 10, 11), ko: '재향군인의 날', en: 'Veterans Day', fixed: true },
+      { d: nthWeekday(y, 10, 4, 4), ko: '추수감사절', en: 'Thanksgiving' },
+      { d: new Date(y, 11, 25), ko: '크리스마스', en: 'Christmas Day', fixed: true },
+    ];
+    return list.map(h => ({ ...h, obs: h.fixed ? observedOf(h.d) : h.d }));
+  }
+
+  // key -> { ko, en, kind: 'actual' | 'observed' }, offKeys: 비영업 공휴일
+  const holInfo = new Map();
+  const holOff = new Set();
+  const loadedYears = new Set();
+  function ensureYear(y) {
+    if (loadedYears.has(y)) return;
+    loadedYears.add(y);
+    for (const h of holidaysOfYear(y)) {
+      const ak = keyOf(h.d), ok = keyOf(h.obs);
+      holInfo.set(ak, { ko: h.ko, en: h.en, kind: 'actual' });
+      holOff.add(ok);
+      if (ok !== ak) holInfo.set(ok, { ko: h.ko + ' (대체)', en: h.en + ' (observed)', kind: 'observed' });
+    }
+  }
+  const prepare = d => { ensureYear(d.getFullYear() - 1); ensureYear(d.getFullYear()); ensureYear(d.getFullYear() + 1); };
+  const holidayOf = d => { prepare(d); return holInfo.get(keyOf(d)); };
+  const isBusiness = d => { prepare(d); const w = d.getDay(); return w !== 0 && w !== 6 && !holOff.has(keyOf(d)); };
+
+  // ---------- 영업일 계산 ----------
+  const segOf = n => n <= 15 ? 1 : n <= 30 ? 2 : 3;
+  function computeRange(start) {
+    // key -> { seg: 0..3, bd: 영업일 번호 | null, first, last }
+    const map = new Map();
+    map.set(keyOf(start), { seg: 0, bd: null, first: true });
+    const milestones = {};
+    let count = 0, d = start, pending = [];
+    while (count < 45) {
+      d = addDays(d, 1);
+      if (isBusiness(d)) {
+        count++;
+        const seg = segOf(count);
+        // 비영업일은 이어지는 다음 영업일의 구간 색으로 빗금 처리
+        for (const p of pending) map.set(keyOf(p), { seg, bd: null });
+        pending = [];
+        map.set(keyOf(d), { seg, bd: count, last: count === 45, milestone: count === 15 || count === 30 });
+        if ([1, 15, 16, 30, 31, 45].includes(count)) milestones[count] = d;
+      } else {
+        pending.push(d);
+      }
+    }
+    return { map, milestones };
+  }
+
+  // ---------- 상태 ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+  };
+  const now = new Date();
+  const todayKey = keyOf(now);
+  let selected = store.get('steamcal.selected');
+  if (selected && !/^\d{4}-\d{2}-\d{2}$/.test(selected)) selected = null;
+  let view = selected ? fromKey(selected) : now;
+  view = new Date(view.getFullYear(), view.getMonth(), 1);
+
+  // ---------- 렌더 ----------
+  const $months = document.getElementById('months');
+  const $summary = document.getElementById('summary');
+
+  function render() {
+    const range = selected ? computeRange(fromKey(selected)) : null;
+    $months.innerHTML = '';
+    for (let i = 0; i < MONTHS_SHOWN; i++) {
+      $months.appendChild(renderMonth(new Date(view.getFullYear(), view.getMonth() + i, 1), range));
+    }
+    renderSummary(range);
+    renderHolidayList();
+  }
+
+  function renderMonth(first, range) {
+    const y = first.getFullYear(), m = first.getMonth();
+    const box = document.createElement('section');
+    box.className = 'month';
+    box.innerHTML = `<h2>${y}년 ${m + 1}월</h2>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    DOW.forEach((n, i) => {
+      const el = document.createElement('div');
+      el.className = 'dow' + (i === 0 || i === 6 ? ' we' : '');
+      el.textContent = n;
+      grid.appendChild(el);
+    });
+    const days = new Date(y, m + 1, 0).getDate();
+    const lead = first.getDay();
+    const total = Math.ceil((lead + days) / 7) * 7;
+    for (let i = 0; i < total; i++) {
+      const dayNum = i - lead + 1;
+      if (dayNum < 1 || dayNum > days) {
+        const e = document.createElement('div');
+        e.className = 'cell empty';
+        grid.appendChild(e);
+        continue;
+      }
+      const d = new Date(y, m, dayNum);
+      const k = keyOf(d);
+      const hol = holidayOf(d);
+      const biz = isBusiness(d);
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cell';
+      if (!biz) cell.classList.add('off');
+      if (hol) cell.classList.add('hol');
+      if (hol && hol.kind === 'actual' && !holOff.has(k)) cell.classList.add('weekend-hol');
+      if (k === todayKey) cell.classList.add('today');
+      if (k === selected) cell.classList.add('sel');
+      cell.dataset.key = k;
+
+      let title = fmt(d) + (biz ? ' · 영업일' : ' · 비영업일');
+      let html = `<span class="num">${dayNum}</span>`;
+      if (hol) {
+        html += `<div class="hname" title="${hol.en}">${hol.ko}</div>`;
+        title += ` · ${hol.ko} / ${hol.en}`;
+      }
+
+      const r = range && range.map.get(k);
+      if (r) {
+        const cls = ['bar', 's' + r.seg, (r.seg === 0 || r.bd) ? 'fill' : 'hatch'];
+        if (r.first) cls.push('first');
+        if (r.last) cls.push('last');
+        if (r.milestone) cls.push('milestone');
+        const label = r.seg === 0 ? '선택' : (r.bd ?? '');
+        html += `<div class="${cls.join(' ')}">${label}</div>`;
+        title += r.seg === 0 ? ' · 선택한 날' : r.bd ? ` · ${r.bd}영업일` : '';
+      }
+      cell.innerHTML = html;
+      cell.title = title;
+      cell.setAttribute('aria-label', title);
+      grid.appendChild(cell);
+    }
+    box.appendChild(grid);
+    return box;
+  }
+
+  function renderSummary(range) {
+    if (!range) {
+      $summary.innerHTML = `<span class="hint">날짜를 클릭하거나 탭하세요. 같은 날짜를 다시 누르면 선택이 해제됩니다.</span>`;
+      return;
+    }
+    const ms = range.milestones;
+    const row = (color, label, d) =>
+      `<div class="row"><i class="sw" style="background:var(${color})"></i><span>${label}</span><b>${fmt(d)}</b></div>`;
+    $summary.innerHTML = `
+      <div class="top">
+        <div>선택한 날: <b>${fmt(fromKey(selected))}</b></div>
+        <button class="clear" id="clear">선택 해제</button>
+      </div>
+      <div class="rows">
+        ${row('--c-g', '1영업일', ms[1])}
+        ${row('--c-g', '15영업일', ms[15])}
+        ${row('--c-y', '16영업일', ms[16])}
+        ${row('--c-y', '30영업일', ms[30])}
+        ${row('--c-o', '31영업일', ms[31])}
+        ${row('--c-o', '45영업일', ms[45])}
+      </div>`;
+    document.getElementById('clear').onclick = () => select(null);
+  }
+
+  function renderHolidayList() {
+    const ys = new Set();
+    for (let i = 0; i < MONTHS_SHOWN; i++) ys.add(new Date(view.getFullYear(), view.getMonth() + i, 1).getFullYear());
+    const ul = document.getElementById('holist-ul');
+    ul.innerHTML = '';
+    for (const y of ys) {
+      for (const h of holidaysOfYear(y)) {
+        const li = document.createElement('li');
+        const moved = keyOf(h.d) !== keyOf(h.obs);
+        li.innerHTML = `<b>${fmt(h.d)}</b> ${h.ko} <span class="obs">${h.en}${moved ? ` → 대체 휴무 ${fmt(h.obs)}` : ''}</span>`;
+        ul.appendChild(li);
+      }
+    }
+    document.querySelector('#holist summary').textContent = `미국 연방 공휴일 목록 (${[...ys].join(', ')})`;
+  }
+
+  function select(k) {
+    selected = (k && k !== selected) ? k : null;
+    store.set('steamcal.selected', selected);
+    render();
+  }
+
+  $months.addEventListener('click', e => {
+    const cell = e.target.closest('button.cell');
+    if (cell) select(cell.dataset.key);
+  });
+  const shift = n => { view = new Date(view.getFullYear(), view.getMonth() + n, 1); render(); };
+  document.getElementById('prev').onclick = () => shift(-1);
+  document.getElementById('next').onclick = () => shift(1);
+  document.getElementById('today').onclick = () => { view = new Date(now.getFullYear(), now.getMonth(), 1); render(); };
+  document.addEventListener('keydown', e => {
+    if (e.target.closest('input, textarea')) return;
+    if (e.key === 'ArrowLeft' && !e.target.closest('.cell')) shift(-1);
+    if (e.key === 'ArrowRight' && !e.target.closest('.cell')) shift(1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
