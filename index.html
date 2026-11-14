@@ -4,150 +4,234 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Steam 세금 심사 캘린더</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ---------- 색상 ---------- */
   :root {
-    --bg: #f6f7f9;
-    --surface: #ffffff;
-    --text: #1d2330;
-    --muted: #6b7385;
-    --line: #e2e5eb;
-    --off-bg: #eef0f4;
-    --holiday: #d23b3b;
-    --today: #1b6fd8;
+    --paper: #f4f2ed;
+    --surface: #fbfaf7;
+    --ink: #1c1b19;
+    --ink-2: #5d5a52;
+    --ink-3: #a29e94;
+    --rule: #dcd8ce;
+    --off: #ebe8e1;
+    --holiday: #b3362c;
+    --hover: rgba(28, 27, 25, .045);
 
-    --c-start: #6ec6f5;   /* 하늘색: 선택한 날 */
-    --c-g: #2fb36b;       /* 초록: 1~15 영업일 */
-    --c-y: #f0c419;       /* 노랑: 16~30 영업일 */
-    --c-o: #f2862e;       /* 주황: 31~45 영업일 */
-    --bar-text: #10202a;
+    --c-start: #74c0ea;   /* 하늘색: 선택한 날 */
+    --c-g: #3aa56a;       /* 초록: 1~15 영업일 */
+    --c-y: #e8bf2c;       /* 노랑: 16~30 영업일 */
+    --c-o: #ea812d;       /* 주황: 31~45 영업일 */
+    --bar-text: #15201a;
+
+    --sans: "IBM Plex Sans KR", "IBM Plex Sans JP", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #13161c;
-      --surface: #1b1f27;
-      --text: #e6e9ef;
-      --muted: #8e96a8;
-      --line: #2b313c;
-      --off-bg: #161a21;
-      --holiday: #ff7272;
-      --today: #6aa8ff;
-      --c-start: #5bb8ea;
-      --c-g: #2ea866;
-      --c-y: #e2b714;
-      --c-o: #e57a24;
+      --paper: #121210;
+      --surface: #191917;
+      --ink: #ecebe6;
+      --ink-2: #a3a097;
+      --ink-3: #6b6961;
+      --rule: #33322e;
+      --off: #1f1e1b;
+      --holiday: #ee7d70;
+      --hover: rgba(236, 235, 230, .05);
+      --c-start: #63b2de;
+      --c-g: #349a61;
+      --c-y: #d9b022;
+      --c-o: #dc7426;
+      color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #13161c;
-    --surface: #1b1f27;
-    --text: #e6e9ef;
-    --muted: #8e96a8;
-    --line: #2b313c;
-    --off-bg: #161a21;
-    --holiday: #ff7272;
-    --today: #6aa8ff;
-    --c-start: #5bb8ea;
-    --c-g: #2ea866;
-    --c-y: #e2b714;
-    --c-o: #e57a24;
+    --paper: #121210;
+    --surface: #191917;
+    --ink: #ecebe6;
+    --ink-2: #a3a097;
+    --ink-3: #6b6961;
+    --rule: #33322e;
+    --off: #1f1e1b;
+    --holiday: #ee7d70;
+    --hover: rgba(236, 235, 230, .05);
+    --c-start: #63b2de;
+    --c-g: #349a61;
+    --c-y: #d9b022;
+    --c-o: #dc7426;
+    color-scheme: dark;
   }
+  :lang(ja) { --sans: "IBM Plex Sans JP", "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif; }
 
+  /* ---------- 기본 ---------- */
   * { box-sizing: border-box; }
   html, body { margin: 0; }
+  html { scrollbar-width: thin; scrollbar-color: var(--ink-3) transparent; }
   body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", "Segoe UI", Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
     font-size: 15px;
-    line-height: 1.4;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; }
+  ::selection { background: var(--ink); color: var(--paper); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--ink-3); border: 3px solid var(--paper); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-2); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 16px 56px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 
-  header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  h1 { font-size: 22px; margin: 0; letter-spacing: -0.02em; }
-  .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  /* ---------- 버튼 ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 34px; min-width: 34px; padding: 0 12px;
+    font: 500 14px/1 var(--sans); color: var(--ink);
+    background: var(--surface); border: 1px solid var(--ink); border-radius: 3px;
+    cursor: pointer; transition: background-color .12s, color .12s;
+  }
+  .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: square; }
+  .btn.icon { padding: 0; width: 34px; }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible, .seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .btn.quiet { border-color: var(--rule); color: var(--ink-2); height: 28px; font-size: 13px; padding: 0 10px; }
+  .btn.quiet:hover { border-color: var(--ink); background: var(--surface); color: var(--ink); }
+
+  .seg { display: inline-flex; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; }
+  .seg button {
+    height: 32px; padding: 0 11px; font: 600 12px/1 var(--mono); letter-spacing: .06em;
+    color: var(--ink); background: var(--surface); border: 0; cursor: pointer;
+  }
+  .seg button + button { border-left: 1px solid var(--ink); }
+  .seg button:hover { background: var(--hover); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+  /* ---------- 머리말 ---------- */
+  header {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px;
+    padding-bottom: 14px; border-bottom: 2px solid var(--ink);
+  }
+  h1 { font-size: 26px; line-height: 1.15; margin: 0; font-weight: 700; letter-spacing: -0.02em; }
+  .sub { color: var(--ink-2); font-size: 13.5px; margin-top: 6px; max-width: 640px; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px 18px; padding: 12px 0;
+    font-size: 12.5px; color: var(--ink-2); border-bottom: 1px solid var(--rule);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .sw { width: 18px; height: 10px; display: inline-block; flex: none; }
+  .sw.hatch {
+    background-image: linear-gradient(-45deg, var(--c-g) 0 20%, transparent 20% 50%, var(--c-g) 50% 70%, transparent 70% 100%);
+    background-size: 6px 6px; box-shadow: inset 0 0 0 1px var(--c-g);
+  }
+  .sw.off { background: var(--off); box-shadow: inset 0 0 0 1px var(--rule); }
+
+  /* ---------- 섹션 공통 ---------- */
+  .block { padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .label {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--ink-2); margin: 0 0 10px;
+  }
+
+  /* ---------- 추가 비영업일 (체크 칩) ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    position: relative; display: inline-flex; align-items: center; gap: 8px;
+    height: 34px; padding: 0 12px 0 10px;
+    font-size: 13.5px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 3px;
+    cursor: pointer; user-select: none; transition: border-color .12s;
+  }
+  .chip:hover { border-color: var(--ink-2); }
+  .chip:has(input:checked) { border-color: var(--ink); }
+  .chip:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+  .chip .box {
+    width: 16px; height: 16px; flex: none; display: grid; place-items: center;
+    border: 1.5px solid var(--ink-3); border-radius: 2px; background: var(--surface);
+    transition: background-color .12s, border-color .12s;
+  }
+  .chip .box::after {
+    content: ""; width: 8px; height: 4px; margin-top: -2px;
+    border-left: 2px solid var(--paper); border-bottom: 2px solid var(--paper);
+    transform: rotate(-45deg); opacity: 0;
+  }
+  .chip input:checked + .box { background: var(--ink); border-color: var(--ink); }
+  .chip input:checked + .box::after { opacity: 1; }
+  .chip .dt { font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .chip input:checked ~ .dt { color: var(--ink-2); }
+  .hint { color: var(--ink-2); font-size: 12.5px; margin: 10px 0 0; }
+
+  /* ---------- 요약 ---------- */
+  .sum-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .sum-top .picked { font-size: 15px; }
+  .sum-top .picked b { font-weight: 700; margin-left: 8px; font-variant-numeric: tabular-nums; }
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-top: 1px solid var(--rule); }
+  .steps li {
+    padding: 10px 12px 8px; border-left: 1px solid var(--rule); cursor: pointer;
+    border-top: 3px solid var(--c); margin-top: -1px;
+  }
+  .steps li:first-child { border-left: 0; padding-left: 0; }
+  .steps li:hover { background: var(--hover); }
+  .steps .k { display: block; font-size: 12px; color: var(--ink-2); }
+  .steps .v { display: block; font-size: 14.5px; font-weight: 600; margin-top: 2px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .empty-hint { color: var(--ink-2); margin: 0; }
+
+  /* ---------- 달력 ---------- */
+  .cal { margin-top: 20px; border: 1px solid var(--ink); background: var(--surface); touch-action: pan-y; }
+  .mhead { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--ink); }
+  .mhead h2 { margin: 0; flex: 1; display: flex; align-items: baseline; gap: 10px; font-weight: 700; }
+  .mhead .m { font-size: 24px; letter-spacing: -0.02em; }
+  .mhead .y { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--ink-2); }
   .nav { display: flex; gap: 6px; }
-  .nav button {
-    font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
-    border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; cursor: pointer;
-  }
-  .nav button:hover { border-color: var(--muted); }
-  .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
-  .lang button {
-    font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: transparent;
-    border: 0; padding: 7px 11px; cursor: pointer;
-  }
-  .lang button + button { border-left: 1px solid var(--line); }
-  .lang button[aria-pressed="true"] { background: var(--today); color: #fff; }
 
-  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
-  .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .sw { width: 22px; height: 10px; border-radius: 3px; display: inline-block; }
-  .sw.hatch { background: repeating-linear-gradient(-45deg, var(--c-g) 0 3px, transparent 3px 6px); box-shadow: inset 0 0 0 1px var(--c-g); }
-  .sw.off { background: var(--off-bg); box-shadow: inset 0 0 0 1px var(--line); }
-
-  .opts {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px;
-    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-    padding: 10px 14px; margin-bottom: 12px; font-size: 14px;
-  }
-  .opts-title { font-weight: 600; }
-  .opts label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-  .opts input { width: 17px; height: 17px; margin: 0; accent-color: var(--today); }
-  .opts .hint { color: var(--muted); font-size: 12px; flex-basis: 100%; }
-
-  .summary {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
-    padding: 12px 14px; margin-bottom: 16px; font-size: 14px;
-  }
-  .summary .hint { color: var(--muted); }
-  .summary .rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 16px; margin-top: 8px; }
-  .summary .row { display: flex; align-items: center; gap: 8px; }
-  .summary .row b { font-weight: 600; }
-  .summary .row span, .summary .row b { white-space: nowrap; }
-  .summary .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .summary .clear { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
-
-  .month { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; touch-action: pan-y; }
-  .mhead { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-  .mhead h2 { font-size: 19px; margin: 0; flex: 1; letter-spacing: -0.01em; }
   .grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
-  .dow { font-size: 12px; color: var(--muted); text-align: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
-  .dow.we { color: var(--holiday); opacity: .75; }
+  .dow {
+    font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-2); padding: 7px 8px; border-bottom: 1px solid var(--rule);
+  }
+  .dow.we { color: var(--holiday); }
 
   .cell {
-    position: relative; min-height: 92px; padding: 4px 5px 0; text-align: left;
-    font: inherit; color: inherit; background: transparent; border: 0;
-    border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
-    cursor: pointer; width: 100%;
+    position: relative; min-height: 92px; width: 100%;
     display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
-    padding-bottom: 28px;
+    padding: 6px 7px 30px; text-align: left;
+    font: inherit; color: inherit; background: transparent; border: 0;
+    border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    cursor: pointer;
   }
   .cell:nth-child(7n) { border-right: 0; }
-  .cell.off { background: var(--off-bg); }
-  @media (hover: hover) { .cell:not(.empty):hover { outline: 2px solid var(--line); outline-offset: -2px; } }
-  .cell:focus-visible { outline: 2px solid var(--today); outline-offset: -2px; }
-  .num { font-size: 13px; font-weight: 600; }
-  .cell.off .num { color: var(--muted); }
-  .cell.hol .num { color: var(--holiday); }
-  .cell.today .num {
-    background: var(--today); color: #fff; border-radius: 999px; padding: 0 6px; display: inline-block;
-  }
+  .grid > .cell:nth-last-child(-n+7) { border-bottom: 0; }
+  .cell.off { background: var(--off); }
+  @media (hover: hover) { .cell:hover { background-image: linear-gradient(var(--hover), var(--hover)); } }
+  .cell:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
+  .num { font-family: var(--mono); font-size: 13px; font-weight: 600; line-height: 20px; }
+  .cell.off .num { color: var(--ink-2); font-weight: 500; }
+  .cell.hol .num { color: var(--holiday); font-weight: 600; }
+  .cell.today .num { background: var(--ink); color: var(--paper); padding: 0 5px; }
   .hname {
-    font-size: 10.5px; line-height: 1.2; color: var(--holiday); margin-top: 1px;
+    font-size: 10.5px; line-height: 1.25; color: var(--holiday); margin-top: 2px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
     word-break: keep-all;
   }
-  .cell.weekend-hol .hname { opacity: .7; }
-  .hname.inactive { color: var(--muted); opacity: .8; }
+  .cell.weekend-hol .hname { opacity: .75; }
+  .hname.inactive { color: var(--ink-3); }
+
+  /* 이전/다음 달 날짜: 옅게 */
+  .cell.adj > * { opacity: .35; }
+  .cell.adj.off { background: color-mix(in srgb, var(--off) 45%, var(--surface)); }
 
   /* 진행 바 */
   .bar {
-    position: absolute; left: 0; right: -1px; bottom: 6px; height: 18px; z-index: 1;
+    position: absolute; left: 0; right: -1px; bottom: 7px; height: 17px; z-index: 1;
     display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: var(--bar-text);
+    font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--bar-text);
     pointer-events: none;
   }
   .bar.s0 { --c: var(--c-start); }
@@ -159,33 +243,70 @@
   .bar.hatch {
     background-image: linear-gradient(-45deg, var(--c) 0 20%, transparent 20% 50%, var(--c) 50% 70%, transparent 70% 100%);
     background-size: 10px 10px;
-    background-repeat: repeat;
-    background-color: var(--off-bg); /* 칸 사이 테두리선이 빗금 사이로 비치지 않게 */
+    background-color: var(--off); /* 칸 사이 테두리선이 빗금 사이로 비치지 않게 */
     box-shadow: inset 0 1.5px 0 var(--c), inset 0 -1.5px 0 var(--c);
   }
-  .bar.first { left: 4px; border-top-left-radius: 9px; border-bottom-left-radius: 9px; }
-  .bar.last { right: 4px; border-top-right-radius: 9px; border-bottom-right-radius: 9px; }
-  .bar.milestone { box-shadow: inset -3px 0 0 rgba(0,0,0,.28); }
+  .cell.adj .bar.hatch { background-color: color-mix(in srgb, var(--off) 45%, var(--surface)); }
+  .bar.first { left: 6px; border-radius: 2px 0 0 2px; }
+  .bar.last { right: 6px; border-radius: 0 2px 2px 0; }
+  .bar.milestone { box-shadow: inset -2px 0 0 rgba(0, 0, 0, .35); }
   .cell.sel { box-shadow: inset 0 0 0 2px var(--c-start); }
-  /* 이전/다음 달 날짜: 옅게 */
-  .cell.adj > * { opacity: .38; }
-  .cell.adj.off { background: color-mix(in srgb, var(--off-bg) 45%, var(--surface)); }
-  .summary .row[data-goto] { cursor: pointer; border-radius: 6px; }
-  .summary .row[data-goto]:hover b { text-decoration: underline; }
 
-  .holist { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px; }
-  .holist summary { cursor: pointer; padding: 8px 0; font-weight: 600; }
-  .holist ul { list-style: none; padding: 0; margin: 0 0 10px; columns: 2 280px; font-size: 14px; }
-  .holist li { padding: 3px 0; break-inside: avoid; }
-  .holist .obs { color: var(--muted); font-size: 12px; }
-  .note { color: var(--muted); font-size: 12px; margin-top: 12px; }
+  /* ---------- 공휴일 목록 ---------- */
+  .holist { margin-top: 20px; border-top: 1px solid var(--ink); }
+  .holist summary {
+    list-style: none; cursor: pointer; padding: 12px 0; font-weight: 600; font-size: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .holist summary::-webkit-details-marker { display: none; }
+  .holist summary::before {
+    content: ""; width: 7px; height: 7px; border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+    transform: rotate(-45deg); transition: transform .15s; margin-right: 2px;
+  }
+  .holist[open] summary::before { transform: rotate(45deg); }
+  .holist .scroll {
+    max-height: 280px; overflow-y: auto; border: 1px solid var(--rule); background: var(--surface);
+    scrollbar-width: thin; scrollbar-color: var(--ink-3) transparent;
+  }
+  .holist .scroll::-webkit-scrollbar-thumb { border-color: var(--surface); }
+  .holist ul { list-style: none; padding: 0; margin: 0; font-size: 13.5px; }
+  .holist li { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 7px 12px; border-bottom: 1px solid var(--rule); }
+  .holist li:last-child { border-bottom: 0; }
+  .holist li .d { font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .holist li .obs { color: var(--ink-3); font-size: 12px; margin-left: 6px; }
+  .holist li.opt .n { color: var(--ink-2); }
+  .note { color: var(--ink-2); font-size: 12px; margin-top: 14px; max-width: 760px; }
 
+  /* ---------- 휴대폰 ---------- */
+  @media (max-width: 720px) {
+    .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .steps li:nth-child(odd) { border-left: 0; padding-left: 0; }
+  }
   @media (max-width: 480px) {
-    h1 { font-size: 19px; }
-    .mhead h2 { font-size: 17px; }
-    .cell { min-height: 62px; padding: 3px 3px 24px; }
+    .wrap { padding-top: 20px; }
+    /* 칩은 한 줄 가로 스크롤 */
+    .chips {
+      flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 10px;
+      scroll-snap-type: x proximity; scrollbar-width: thin; scrollbar-color: var(--ink-3) transparent;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 24px), transparent);
+              mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 24px), transparent);
+    }
+    .chips::-webkit-scrollbar { height: 6px; }
+    .chips::-webkit-scrollbar-thumb { border: 0; background: var(--rule); }
+    .chip { flex: none; scroll-snap-align: start; }
+    h1 { font-size: 21px; }
+    .mhead { padding: 10px; gap: 8px; }
+    .mhead .m { font-size: 20px; }
+    .mhead .y { font-size: 13px; }
+    .nav { gap: 4px; }
+    .dow { padding: 6px 4px; font-size: 10.5px; letter-spacing: 0; text-align: center; }
+    .cell { min-height: 64px; padding: 4px 3px 25px; }
+    .num { font-size: 12px; }
     .hname { font-size: 9.5px; -webkit-line-clamp: 1; }
-    .bar { height: 16px; font-size: 10px; bottom: 5px; }
+    .bar { height: 15px; font-size: 10px; bottom: 5px; }
+    .bar.first { left: 3px; }
+    .bar.last { right: 3px; }
+    .holist li { grid-template-columns: 1fr; gap: 0; }
   }
 </style>
 </head>
@@ -196,12 +317,10 @@
       <h1 data-i18n="title"></h1>
       <div class="sub" data-i18n="sub"></div>
     </div>
-    <div class="tools">
-      <div class="lang" id="lang" role="group" aria-label="Language">
-        <button type="button" data-lang="ko">KR</button>
-        <button type="button" data-lang="en">EN</button>
-        <button type="button" data-lang="ja">JP</button>
-      </div>
+    <div class="seg" id="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="ko">KR</button>
+      <button type="button" data-lang="en">EN</button>
+      <button type="button" data-lang="ja">JP</button>
     </div>
   </header>
 
@@ -214,21 +333,21 @@
     <span><i class="sw off"></i><span data-i18n="lgOff"></span></span>
   </div>
 
-  <div class="opts" id="opts">
-    <span class="opts-title" data-i18n="optTitle"></span>
-    <label><input type="checkbox" data-opt="thanksFri"> <span data-i18n="optThanks"></span></label>
-    <label><input type="checkbox" data-opt="xmasEve"> <span data-i18n="optXmas"></span></label>
-    <span class="hint" data-i18n="optHint"></span>
-  </div>
+  <section class="block" id="opts">
+    <h3 class="label" data-i18n="optTitle"></h3>
+    <div class="chips" id="chips"></div>
+    <p class="hint" data-i18n="optHint"></p>
+  </section>
 
-  <div class="summary" id="summary"></div>
-  <section class="month" id="months">
+  <section class="block" id="summary"></section>
+
+  <section class="cal" id="months">
     <div class="mhead">
       <h2 id="mtitle"></h2>
       <div class="nav">
-        <button id="today" data-i18n="today"></button>
-        <button id="prev">◀</button>
-        <button id="next">▶</button>
+        <button class="btn" id="today" data-i18n="today"></button>
+        <button class="btn icon" id="prev"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+        <button class="btn icon" id="next"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
       </div>
     </div>
     <div class="grid"></div>
@@ -236,9 +355,9 @@
 
   <details class="holist" id="holist">
     <summary></summary>
-    <ul id="holist-ul"></ul>
+    <div class="scroll"><ul id="holist-ul"></ul></div>
   </details>
-  <div class="note" data-i18n="note"></div>
+  <p class="note" data-i18n="note"></p>
 </div>
 
 <script>
@@ -248,65 +367,68 @@
     ko: {
       htmlLang: 'ko',
       title: 'Steam 세금 심사 캘린더',
-      sub: '날짜를 클릭/탭하면 다음 영업일부터 45영업일까지 표시됩니다 (미국 연방 공휴일·주말 제외)',
+      sub: '날짜를 누르면 다음 영업일부터 45영업일까지 표시합니다. 주말과 미국 연방 공휴일은 영업일에서 빠집니다.',
       today: '오늘', prev: '이전 달', next: '다음 달',
       lgSel: '선택한 날', lgG: '1–15 영업일', lgY: '16–30 영업일', lgO: '31–45 영업일',
       lgHatch: '비영업일 (빗금)', lgOff: '주말·미국 공휴일',
-      optTitle: '추가 비영업일', optThanks: '추수감사절 다음날 (금)', optXmas: '크리스마스이브 (12/24)',
-      optHint: '연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 체크하면 비영업일로 계산합니다.',
+      optTitle: '추가 비영업일',
+      optHint: '연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 성금요일은 미국 증시 휴장일입니다. 켜면 비영업일로 계산합니다.',
       note: '공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다. 추가 비영업일은 주말과 겹치면 대체 휴무 없이 그대로 둡니다.',
-      hint: '날짜를 클릭하거나 탭하세요. 같은 날짜를 다시 누르면 선택이 해제됩니다.',
+      hint: '달력에서 날짜를 누르세요. 같은 날짜를 다시 누르면 선택이 해제됩니다.',
       selected: '선택한 날', clear: '선택 해제', start: '선택',
       bd: n => `${n}영업일`, biz: '영업일', nonbiz: '비영업일',
       optOn: '추가 비영업일', optOff: '옵션 꺼짐: 영업일',
       holList: ys => `미국 연방 공휴일 목록 (${ys})`,
       observedTo: d => `→ 대체 휴무 ${d}`, observed: ' (대체)',
-      listOptOn: '추가 옵션 켜짐 (비영업일)', listOptOff: '추가 옵션 꺼짐 (영업일)',
+      listOptOn: '추가 옵션 · 켜짐', listOptOff: '추가 옵션 · 꺼짐',
       dow: ['일', '월', '화', '수', '목', '금', '토'],
-      month: (y, m) => `${y}년 ${m + 1}월`,
+      monthParts: (y, m) => [`${m + 1}월`, `${y}`],
       fmt: (d, w) => `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()} (${w})`,
+      short: (d, w) => `${d.getMonth() + 1}/${d.getDate()} ${w}`,
     },
     en: {
       htmlLang: 'en',
       title: 'Steam Tax Review Calendar',
-      sub: 'Click or tap a date to mark business days 1–45, starting the next business day (US federal holidays and weekends excluded)',
+      sub: 'Tap a date to mark business days 1–45, starting the next business day. Weekends and US federal holidays are not counted.',
       today: 'Today', prev: 'Previous month', next: 'Next month',
       lgSel: 'Selected day', lgG: 'Business days 1–15', lgY: 'Business days 16–30', lgO: 'Business days 31–45',
       lgHatch: 'Non-business day (hatched)', lgOff: 'Weekend / US holiday',
-      optTitle: 'Extra non-business days', optThanks: 'Day after Thanksgiving (Fri)', optXmas: 'Christmas Eve (12/24)',
-      optHint: 'Not federal holidays, but many companies are closed. Check to count them as non-business days.',
+      optTitle: 'Extra non-business days',
+      optHint: 'Not federal holidays, but many companies are closed. Good Friday is a US stock market holiday. Turn on to count as non-business days.',
       note: 'A holiday on Saturday is observed the Friday before; on Sunday, the Monday after. Numbers in the bar are business-day counts. Extra non-business days that fall on a weekend are not moved.',
-      hint: 'Click or tap a date. Tap the same date again to clear.',
+      hint: 'Tap a date on the calendar. Tap the same date again to clear.',
       selected: 'Selected day', clear: 'Clear', start: 'Start',
       bd: n => `Business day ${n}`, biz: 'Business day', nonbiz: 'Non-business day',
       optOn: 'extra non-business day', optOff: 'option off: business day',
       holList: ys => `US federal holidays (${ys})`,
       observedTo: d => `→ observed ${d}`, observed: ' (observed)',
-      listOptOn: 'extra option on (non-business)', listOptOff: 'extra option off (business day)',
+      listOptOn: 'extra option · on', listOptOff: 'extra option · off',
       dow: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      month: (y, m) => new Date(y, m, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      monthParts: (y, m) => [new Date(y, m, 1).toLocaleDateString('en-US', { month: 'long' }), `${y}`],
       fmt: (d, w) => `${w}, ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      short: (d, w) => `${w} ${d.getMonth() + 1}/${d.getDate()}`,
     },
     ja: {
       htmlLang: 'ja',
       title: 'Steam 税務審査カレンダー',
-      sub: '日付をクリック/タップすると、翌営業日から45営業日目までを表示します（米国連邦祝日・土日を除く）',
+      sub: '日付を押すと、翌営業日から45営業日目までを表示します。土日と米国連邦祝日は営業日に含めません。',
       today: '今日', prev: '前の月', next: '次の月',
       lgSel: '選択日', lgG: '1–15営業日', lgY: '16–30営業日', lgO: '31–45営業日',
       lgHatch: '非営業日（斜線）', lgOff: '土日・米国祝日',
-      optTitle: '追加の非営業日', optThanks: '感謝祭の翌日（金）', optXmas: 'クリスマス・イブ（12/24）',
-      optHint: '連邦祝日ではありませんが、休業する企業が多い日です。チェックすると非営業日として計算します。',
+      optTitle: '追加の非営業日',
+      optHint: '連邦祝日ではありませんが、休業する企業が多い日です。聖金曜日は米国株式市場の休場日です。オンにすると非営業日として計算します。',
       note: '祝日が土曜日の場合は前日（金）、日曜日の場合は翌日（月）が振替休日（非営業日）になります。バー内の数字は営業日数です。追加の非営業日が土日と重なる場合は振り替えません。',
-      hint: '日付をクリックまたはタップしてください。同じ日付をもう一度押すと解除されます。',
+      hint: 'カレンダーの日付を押してください。同じ日付をもう一度押すと解除されます。',
       selected: '選択日', clear: '選択解除', start: '選択',
       bd: n => `${n}営業日`, biz: '営業日', nonbiz: '非営業日',
       optOn: '追加の非営業日', optOff: 'オプション無効：営業日',
       holList: ys => `米国連邦祝日一覧（${ys}）`,
       observedTo: d => `→ 振替休日 ${d}`, observed: '（振替）',
-      listOptOn: '追加オプション有効（非営業日）', listOptOff: '追加オプション無効（営業日）',
+      listOptOn: '追加オプション・有効', listOptOff: '追加オプション・無効',
       dow: ['日', '月', '火', '水', '木', '金', '土'],
-      month: (y, m) => `${y}年${m + 1}月`,
+      monthParts: (y, m) => [`${m + 1}月`, `${y}年`],
       fmt: (d, w) => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${w}）`,
+      short: (d, w) => `${d.getMonth() + 1}/${d.getDate()}（${w}）`,
     },
   };
 
@@ -322,8 +444,12 @@
     veterans:     { ko: '재향군인의 날', en: 'Veterans Day', ja: '復員軍人の日' },
     thanksgiving: { ko: '추수감사절', en: 'Thanksgiving', ja: '感謝祭' },
     christmas:    { ko: '크리스마스', en: 'Christmas Day', ja: 'クリスマス' },
+    // 추가 비영업일 (옵션)
+    goodFri:      { ko: '성금요일', en: 'Good Friday', ja: '聖金曜日' },
     thanksFri:    { ko: '추수감사절 다음날', en: 'Day after Thanksgiving', ja: '感謝祭の翌日' },
     xmasEve:      { ko: '크리스마스이브', en: 'Christmas Eve', ja: 'クリスマス・イブ' },
+    xmasAfter:    { ko: '크리스마스 다음날', en: 'Day after Christmas', ja: 'クリスマスの翌日' },
+    nye:          { ko: '새해 전날', en: "New Year's Eve", ja: '大晦日' },
   };
 
   const store = {
@@ -353,6 +479,7 @@
   const fromKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
   const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const fmt = d => T().fmt(d, T().dow[d.getDay()]);
+  const fmtShort = d => T().short(d, T().dow[d.getDay()]);
 
   // ---------- 미국 연방 공휴일 ----------
   const nthWeekday = (y, m, wd, n) => {
@@ -364,6 +491,15 @@
     return new Date(y, m, last.getDate() - ((last.getDay() - wd + 7) % 7));
   };
   const observedOf = d => d.getDay() === 6 ? addDays(d, -1) : d.getDay() === 0 ? addDays(d, 1) : d;
+  // 부활절 (그레고리력, Anonymous Gregorian algorithm)
+  function easter(y) {
+    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
+    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(y, month - 1, day);
+  }
 
   function holidaysOfYear(y) {
     const list = [
@@ -382,10 +518,13 @@
     return list.map(h => ({ ...h, obs: h.fixed ? observedOf(h.d) : h.d }));
   }
 
-  // 선택형 비영업일 (연방 공휴일 아님)
+  // 선택형 비영업일 (연방 공휴일 아님). 날짜 순서대로 표시
   const OPTIONAL = {
+    goodFri: y => addDays(easter(y), -2),
     thanksFri: y => addDays(nthWeekday(y, 10, 4, 4), 1),
     xmasEve: y => new Date(y, 11, 24),
+    xmasAfter: y => new Date(y, 11, 26),
+    nye: y => new Date(y, 11, 31),
   };
   let opts = {};
   function optionalOf(d) {
@@ -457,6 +596,7 @@
   // ---------- 렌더 ----------
   const $months = document.getElementById('months');
   const $summary = document.getElementById('summary');
+  const $chips = document.getElementById('chips');
 
   function applyStatic() {
     const t = T();
@@ -470,8 +610,10 @@
 
   function render() {
     const range = selected ? computeRange(fromKey(selected)) : null;
-    document.getElementById('mtitle').textContent = T().month(view.getFullYear(), view.getMonth());
+    const [mName, yName] = T().monthParts(view.getFullYear(), view.getMonth());
+    document.getElementById('mtitle').innerHTML = `<span class="m">${mName}</span><span class="y">${yName}</span>`;
     $months.querySelector('.grid').replaceWith(renderGrid(view, range));
+    renderChips();
     renderSummary(range);
     renderHolidayList();
     alignHatches();
@@ -489,6 +631,27 @@
   }
   if ('ResizeObserver' in window) new ResizeObserver(() => alignHatches()).observe($months);
   else window.addEventListener('resize', alignHatches);
+
+  // 추가 비영업일 체크 칩 (보고 있는 해의 날짜를 같이 표시)
+  function renderChips() {
+    const y = view.getFullYear();
+    $chips.innerHTML = Object.entries(OPTIONAL).map(([id, dateOf]) => `
+      <label class="chip">
+        <input type="checkbox" data-opt="${id}"${opts[id] ? ' checked' : ''}>
+        <span class="box" aria-hidden="true"></span>
+        <span>${hname(id)}</span>
+        <span class="dt">${fmtShort(dateOf(y))}</span>
+      </label>`).join('');
+  }
+  $chips.addEventListener('change', e => {
+    const cb = e.target.closest('input[data-opt]');
+    if (!cb) return;
+    opts[cb.dataset.opt] = cb.checked;
+    store.set('steamcal.opts', JSON.stringify(opts));
+    render();
+    const again = $chips.querySelector(`input[data-opt="${cb.dataset.opt}"]`);
+    if (again) again.focus({ preventScroll: true });
+  });
 
   // 한 달 그리드. 앞뒤 빈칸은 이전/다음 달 날짜로 채움
   function renderGrid(first, range) {
@@ -558,46 +721,41 @@
   function renderSummary(range) {
     const t = T();
     if (!range) {
-      $summary.innerHTML = `<span class="hint">${t.hint}</span>`;
+      $summary.innerHTML = `<p class="empty-hint">${t.hint}</p>`;
       return;
     }
     const ms = range.milestones;
-    const row = (color, n) =>
-      `<div class="row" data-goto="${keyOf(ms[n])}"><i class="sw" style="background:var(${color})"></i><span>${t.bd(n)}</span><b>${fmt(ms[n])}</b></div>`;
+    const step = (color, n) =>
+      `<li style="--c:var(${color})" data-goto="${keyOf(ms[n])}"><span class="k">${t.bd(n)}</span><span class="v">${fmt(ms[n])}</span></li>`;
     $summary.innerHTML = `
-      <div class="top">
-        <div class="row" data-goto="${selected}">${t.selected}: <b>${fmt(fromKey(selected))}</b></div>
-        <button class="clear" id="clear">${t.clear}</button>
+      <div class="sum-top">
+        <div class="picked" data-goto="${selected}">${t.selected}<b>${fmt(fromKey(selected))}</b></div>
+        <button class="btn quiet" id="clear">${t.clear}</button>
       </div>
-      <div class="rows">
-        ${row('--c-g', 1)}${row('--c-g', 15)}
-        ${row('--c-y', 16)}${row('--c-y', 30)}
-        ${row('--c-o', 31)}${row('--c-o', 45)}
-      </div>`;
+      <ol class="steps">
+        ${step('--c-g', 1)}${step('--c-g', 15)}
+        ${step('--c-y', 16)}${step('--c-y', 30)}
+        ${step('--c-o', 31)}${step('--c-o', 45)}
+      </ol>`;
     document.getElementById('clear').onclick = () => select(null);
   }
 
   function renderHolidayList() {
     const t = T();
-    const ys = new Set([view.getFullYear()]);
-    const ul = document.getElementById('holist-ul');
-    ul.innerHTML = '';
-    for (const y of ys) {
-      for (const h of holidaysOfYear(y)) {
-        const li = document.createElement('li');
-        const moved = keyOf(h.d) !== keyOf(h.obs);
-        const en = lang !== 'en' ? HOL_NAMES[h.id].en : '';
-        const extra = [en, moved ? t.observedTo(fmt(h.obs)) : ''].filter(Boolean).join(' ');
-        li.innerHTML = `<b>${fmt(h.d)}</b> ${hname(h.id)} <span class="obs">${extra}</span>`;
-        ul.appendChild(li);
-      }
-      for (const [id, dateOf] of Object.entries(OPTIONAL)) {
-        const li = document.createElement('li');
-        li.innerHTML = `<b>${fmt(dateOf(y))}</b> ${hname(id)} <span class="obs">${opts[id] ? t.listOptOn : t.listOptOff}</span>`;
-        ul.appendChild(li);
-      }
+    const y = view.getFullYear();
+    const rows = holidaysOfYear(y).map(h => {
+      const moved = keyOf(h.d) !== keyOf(h.obs);
+      const en = lang !== 'en' ? HOL_NAMES[h.id].en : '';
+      const extra = [en, moved ? t.observedTo(fmt(h.obs)) : ''].filter(Boolean).join(' ');
+      return { d: h.d, html: `<span class="d">${fmt(h.d)}</span><span><span class="n">${hname(h.id)}</span><span class="obs">${extra}</span></span>` };
+    });
+    for (const [id, dateOf] of Object.entries(OPTIONAL)) {
+      const d = dateOf(y);
+      rows.push({ d, opt: true, html: `<span class="d">${fmt(d)}</span><span><span class="n">${hname(id)}</span><span class="obs">${opts[id] ? t.listOptOn : t.listOptOff}</span></span>` });
     }
-    document.querySelector('#holist summary').textContent = t.holList([...ys].join(', '));
+    rows.sort((a, b) => a.d - b.d);
+    document.getElementById('holist-ul').innerHTML = rows.map(r => `<li${r.opt ? ' class="opt"' : ''}>${r.html}</li>`).join('');
+    document.querySelector('#holist summary').textContent = t.holList(y);
   }
 
   function select(k) {
@@ -610,6 +768,7 @@
     const cell = e.target.closest('button.cell');
     if (cell) select(cell.dataset.key);
   });
+  const shift = n => { view = new Date(view.getFullYear(), view.getMonth() + n, 1); render(); };
   // 요약의 날짜를 누르면 그 달로 이동
   $summary.addEventListener('click', e => {
     const row = e.target.closest('[data-goto]');
@@ -631,7 +790,6 @@
     touch = null;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shift(dx < 0 ? 1 : -1);
   }, { passive: true });
-  const shift = n => { view = new Date(view.getFullYear(), view.getMonth() + n, 1); render(); };
   document.getElementById('prev').onclick = () => shift(-1);
   document.getElementById('next').onclick = () => shift(1);
   document.getElementById('today').onclick = () => { view = new Date(now.getFullYear(), now.getMonth(), 1); render(); };
@@ -646,15 +804,6 @@
       lang = b.dataset.lang;
       store.set('steamcal.lang', lang);
       applyStatic();
-      render();
-    });
-  });
-
-  document.querySelectorAll('#opts input[data-opt]').forEach(cb => {
-    cb.checked = !!opts[cb.dataset.opt];
-    cb.addEventListener('change', () => {
-      opts[cb.dataset.opt] = cb.checked;
-      store.set('steamcal.opts', JSON.stringify(opts));
       render();
     });
   });
