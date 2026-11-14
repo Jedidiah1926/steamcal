@@ -156,8 +156,12 @@
   .bar.s2 { --c: var(--c-y); }
   .bar.s3 { --c: var(--c-o); }
   .bar.fill { background: var(--c); }
+  /* 빗금: 이어지는 칸끼리 무늬가 맞도록 10px 정사각 타일 + JS에서 위치 정렬 */
   .bar.hatch {
-    background: repeating-linear-gradient(-45deg, var(--c) 0 3px, transparent 3px 7px);
+    background-image: linear-gradient(-45deg, var(--c) 0 20%, transparent 20% 50%, var(--c) 50% 70%, transparent 70% 100%);
+    background-size: 10px 10px;
+    background-repeat: repeat;
+    background-color: var(--off-bg); /* 칸 사이 테두리선이 빗금 사이로 비치지 않게 */
     box-shadow: inset 0 1.5px 0 var(--c), inset 0 -1.5px 0 var(--c);
   }
   .bar.first { left: 4px; border-top-left-radius: 9px; border-bottom-left-radius: 9px; }
@@ -476,7 +480,21 @@
     }
     renderSummary(range);
     renderHolidayList(n);
+    alignHatches();
   }
+
+  // 각 빗금 막대의 무늬 시작점을 달력(그리드) 기준으로 맞춰서, 칸이 바뀌어도 빗금이 끊기지 않게 함
+  function alignHatches() {
+    document.querySelectorAll('.grid').forEach(grid => {
+      const gx = grid.getBoundingClientRect().left;
+      grid.querySelectorAll('.bar.hatch').forEach(bar => {
+        const x = bar.getBoundingClientRect().left - gx;
+        bar.style.backgroundPosition = `${-x}px 0`;
+      });
+    });
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(() => alignHatches()).observe($months);
+  else window.addEventListener('resize', alignHatches);
 
   function renderMonth(first, range) {
     const t = T();
