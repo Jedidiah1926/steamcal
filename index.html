@@ -372,7 +372,7 @@
       lgSel: '선택한 날', lgG: '1–15 영업일', lgY: '16–30 영업일', lgO: '31–45 영업일',
       lgHatch: '비영업일 (빗금)', lgOff: '주말·미국 공휴일',
       optTitle: '추가 비영업일',
-      optHint: '연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 성금요일은 미국 증시 휴장일입니다. 켜면 비영업일로 계산합니다.',
+      optHint: '연방 공휴일은 아니지만 쉬는 회사가 많은 날입니다. 기본으로 켜져 있으며, 끄면 영업일로 계산합니다.',
       note: '공휴일이 토요일이면 전날(금), 일요일이면 다음날(월)이 대체 휴무일(비영업일)로 처리됩니다. 막대 안 숫자는 영업일 수입니다. 추가 비영업일은 주말과 겹치면 대체 휴무 없이 그대로 둡니다.',
       hint: '달력에서 날짜를 누르세요. 같은 날짜를 다시 누르면 선택이 해제됩니다.',
       selected: '선택한 날', clear: '선택 해제', start: '선택',
@@ -394,7 +394,7 @@
       lgSel: 'Selected day', lgG: 'Business days 1–15', lgY: 'Business days 16–30', lgO: 'Business days 31–45',
       lgHatch: 'Non-business day (hatched)', lgOff: 'Weekend / US holiday',
       optTitle: 'Extra non-business days',
-      optHint: 'Not federal holidays, but many companies are closed. Good Friday is a US stock market holiday. Turn on to count as non-business days.',
+      optHint: 'Not federal holidays, but many companies are closed. They are on by default; turn one off to count it as a business day.',
       note: 'A holiday on Saturday is observed the Friday before; on Sunday, the Monday after. Numbers in the bar are business-day counts. Extra non-business days that fall on a weekend are not moved.',
       hint: 'Tap a date on the calendar. Tap the same date again to clear.',
       selected: 'Selected day', clear: 'Clear', start: 'Start',
@@ -416,7 +416,7 @@
       lgSel: '選択日', lgG: '1–15営業日', lgY: '16–30営業日', lgO: '31–45営業日',
       lgHatch: '非営業日（斜線）', lgOff: '土日・米国祝日',
       optTitle: '追加の非営業日',
-      optHint: '連邦祝日ではありませんが、休業する企業が多い日です。聖金曜日は米国株式市場の休場日です。オンにすると非営業日として計算します。',
+      optHint: '連邦祝日ではありませんが、休業する企業が多い日です。初期設定でオンになっており、オフにすると営業日として計算します。',
       note: '祝日が土曜日の場合は前日（金）、日曜日の場合は翌日（月）が振替休日（非営業日）になります。バー内の数字は営業日数です。追加の非営業日が土日と重なる場合は振り替えません。',
       hint: 'カレンダーの日付を押してください。同じ日付をもう一度押すと解除されます。',
       selected: '選択日', clear: '選択解除', start: '選択',
@@ -445,10 +445,8 @@
     thanksgiving: { ko: '추수감사절', en: 'Thanksgiving', ja: '感謝祭' },
     christmas:    { ko: '크리스마스', en: 'Christmas Day', ja: 'クリスマス' },
     // 추가 비영업일 (옵션)
-    goodFri:      { ko: '성금요일', en: 'Good Friday', ja: '聖金曜日' },
     thanksFri:    { ko: '추수감사절 다음날', en: 'Day after Thanksgiving', ja: '感謝祭の翌日' },
     xmasEve:      { ko: '크리스마스이브', en: 'Christmas Eve', ja: 'クリスマス・イブ' },
-    xmasAfter:    { ko: '크리스마스 다음날', en: 'Day after Christmas', ja: 'クリスマスの翌日' },
     nye:          { ko: '새해 전날', en: "New Year's Eve", ja: '大晦日' },
   };
 
@@ -491,15 +489,6 @@
     return new Date(y, m, last.getDate() - ((last.getDay() - wd + 7) % 7));
   };
   const observedOf = d => d.getDay() === 6 ? addDays(d, -1) : d.getDay() === 0 ? addDays(d, 1) : d;
-  // 부활절 (그레고리력, Anonymous Gregorian algorithm)
-  function easter(y) {
-    const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4;
-    const f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
-    const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4;
-    const l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
-    const month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
-    return new Date(y, month - 1, day);
-  }
 
   function holidaysOfYear(y) {
     const list = [
@@ -520,17 +509,17 @@
 
   // 선택형 비영업일 (연방 공휴일 아님). 날짜 순서대로 표시
   const OPTIONAL = {
-    goodFri: y => addDays(easter(y), -2),
     thanksFri: y => addDays(nthWeekday(y, 10, 4, 4), 1),
     xmasEve: y => new Date(y, 11, 24),
-    xmasAfter: y => new Date(y, 11, 26),
     nye: y => new Date(y, 11, 31),
   };
+  // 저장된 값이 없으면 기본으로 켜짐
   let opts = {};
+  const isOn = id => (id in opts ? !!opts[id] : true);
   function optionalOf(d) {
     const k = keyOf(d);
     for (const [id, dateOf] of Object.entries(OPTIONAL)) {
-      if (keyOf(dateOf(d.getFullYear())) === k) return { id, on: !!opts[id] };
+      if (keyOf(dateOf(d.getFullYear())) === k) return { id, on: isOn(id) };
     }
     return null;
   }
@@ -637,7 +626,7 @@
     const y = view.getFullYear();
     $chips.innerHTML = Object.entries(OPTIONAL).map(([id, dateOf]) => `
       <label class="chip">
-        <input type="checkbox" data-opt="${id}"${opts[id] ? ' checked' : ''}>
+        <input type="checkbox" data-opt="${id}"${isOn(id) ? ' checked' : ''}>
         <span class="box" aria-hidden="true"></span>
         <span>${hname(id)}</span>
         <span class="dt">${fmtShort(dateOf(y))}</span>
@@ -751,7 +740,7 @@
     });
     for (const [id, dateOf] of Object.entries(OPTIONAL)) {
       const d = dateOf(y);
-      rows.push({ d, opt: true, html: `<span class="d">${fmt(d)}</span><span><span class="n">${hname(id)}</span><span class="obs">${opts[id] ? t.listOptOn : t.listOptOff}</span></span>` });
+      rows.push({ d, opt: true, html: `<span class="d">${fmt(d)}</span><span><span class="n">${hname(id)}</span><span class="obs">${isOn(id) ? t.listOptOn : t.listOptOff}</span></span>` });
     }
     rows.sort((a, b) => a.d - b.d);
     document.getElementById('holist-ul').innerHTML = rows.map(r => `<li${r.opt ? ' class="opt"' : ''}>${r.html}</li>`).join('');
